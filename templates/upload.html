@@ -1,9 +1,18 @@
-{% extends "view-master.html" %}
-
-{% block title %}
-    Upload file
-{% endblock  %}
-
+{% extends "view-master.html" %} 
+{% block title %} Nhận dạng xuất huyết não {% endblock %} 
 {% block content %}
-    Content
-{% endblock content %}
+<div class="container">
+    <div class="col-12 text-center">
+        <img class="margin-top-50" src="static/cdn/brain-512x512.png" width="200" height="200" >
+        <p class="f-30 fw-100">Nhận dạng vùng xuất huyết não bằng cách upload 1 bức ảnh CT.</p>
+
+    </div>
+    <div class="col-12 text-center margin-top-50">
+        <form method="POST" enctype="multipart/form-data" action="tai-len" class="file-upload">
+            {% csrf_token %}
+            <input type="file" class="text-center file" name="file"></input>
+        </form>
+        <input type="submit" value="Tải lên">
+    </div>
+</div>
+{% endblock %}

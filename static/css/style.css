@@ -1,3 +1,46 @@
 .box-shadow{
     box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
 }
+
+.margin-top-50{
+    margin-top: 50px;
+}
+
+.f-30{
+    font-size: 30px;
+}
+
+.fw-100{
+    font-weight: 100
+}
+
+.h-100{
+    height: 100px;
+}
+
+.file-upload{
+    height: 200px;
+    width: 200px;
+    border-radius: 100px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 4px solid #FFFFFF;
+    overflow: hidden;
+    background-image: linear-gradient(to bottom, #2590EB 50%, #FFFFFF 50%);
+    background-size: 100% 200%;
+    transition: all 1s;
+    color: #FFFFFF;
+    font-size: 100px;
+}
+
+.file{
+    height: 200px;
+    width: 200px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
