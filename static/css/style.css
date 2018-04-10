@@ -1,46 +1,89 @@
 .box-shadow{
     box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
 }
-
-.margin-top-50{
-    margin-top: 50px;
+.footer{
+    padding: .5rem 1rem;
+    margin-top: 10px;
+}
+.footer p{
+    margin: 0;
+    line-height: 40px;
 }
 
-.f-30{
-    font-size: 30px;
+/* Font */
+.f-13{
+    font-size: 13px;
 }
 
-.fw-100{
-    font-weight: 100
+.f-15{
+    font-size: 15px;
 }
 
-.h-100{
-    height: 100px;
+.f-16{
+    font-size: 16px;
 }
 
-.file-upload{
-    height: 200px;
-    width: 200px;
-    border-radius: 100px;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 4px solid #FFFFFF;
-    overflow: hidden;
-    background-image: linear-gradient(to bottom, #2590EB 50%, #FFFFFF 50%);
-    background-size: 100% 200%;
-    transition: all 1s;
-    color: #FFFFFF;
-    font-size: 100px;
+.f-25{
+    font-size: 25px;
 }
 
-.file{
-    height: 200px;
-    width: 200px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    cursor: pointer;
+.b{
+    font-weight: bold
+}
+
+.block{
+    display: block;
+}
+
+.hide{
+    display: none;
+}
+
+.lh-35{
+    line-height: 35px;
+}
+
+/* Padding */
+.pd-tb-10-lr-15{
+    padding: 10px 15px;
+}
+
+.pd-top-20{
+    padding-top: 20px;
+}
+
+.pd-top-bottom-10{
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+/* Margin */
+.mg-right-20{
+    margin-right: 20px;
+}
+
+.mg-right-10{
+    margin-right: 10px;
+}
+
+.mg-top-20{
+    margin-top: 20px;
+}
+
+/* image */
+.object-fit{
+    object-fit: cover;
+}
+
+.border-radius-10{
+    border-radius: 10px;
+}
+
+.border-radius-20{
+    border-radius: 20px;
+}
+
+/* Cursor */
+.context-menu{
+    cursor: context-menu;
 }

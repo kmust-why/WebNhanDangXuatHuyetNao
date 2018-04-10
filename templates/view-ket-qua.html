@@ -1,0 +1,27 @@
+{% extends "view-master.html" %} 
+{% block title %}
+    Kết quả
+{% endblock %} 
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12 padding-top-10">
+            <p class="b f-30">Kết quả</p>
+        </div>
+        <div class="col-6">
+            <label for="">Họ tên</label>
+            <p class="b">{{ HOTEN }}</p>
+            <label for="">Nơi khám</label>
+            <p class="b">{{ NOIKHAM }}</p>
+            <label for="">Ngày khám</label>
+            <p class="b">{{ NGAYKHAM }}</p>
+            <label for="">Mô tả</label>
+            <p class="b">{{ MOTA }}</p>
+        </div>
+        <div class="col-6">
+            <img src="{{ URLANH }}" alt="Ảnh upload">
+        </div>
+        {{JSON}}
+    </div>
+</div>
+{% endblock content %}
