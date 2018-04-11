@@ -1,0 +1,143 @@
+{% extends "view-master.html" %} 
+{% block title %} Nhận dạng xuất huyết não {% endblock %} 
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12 pd-top-20">
+            <img src="static/cdn/tool.png" alt="" width="60" height="60" class="float-left mg-right-20">
+            <h1 class="f-25 b">Nhận dạng vùng xuất huyết não trên ảnh CT/MRI</h1>
+            <p class="f-16">Công cụ giúp nhận dạng các vùng xuất huyết não trên ảnh y tế, góp phần giảm áp lực cho các bác sĩ X quang.</p>      
+        </div>
+        <div class="col-12 text-center pd-top-20">
+            <img src="static/cdn/upload-file.png" alt="" width="200" height="200" class="chon-file">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="file" class="hide file" name="file"></input>
+                <input type="submit" value="Tải ảnh lên" class="btn btn-primary btn-upload mg-top-20 border-radius-20" disabled>
+            </form>
+        </div>
+        <div class="col-12 ket-qua hide">
+            <div class="row">
+                <div class="col-12 pd-top-20">
+                    <hr>
+                    <img src="static/cdn/ket-qua.png" alt="" width="60" height="60" class="float-left mg-right-20">
+                    <h1 class="f-25 b scroll">Kết quả</h1>
+                    <p class="f-16">Bên dưới là thông tin từ file DICOM, kết quả hệ thống nhận dạng.</p>      
+                </div>
+                <div class="col-12">
+                    <span  data-toggle="collapse" href="#collapse" role="button" aria-expanded="false" aria-controls="collapseExample">
+                        <img src="static/cdn/bottom.png" width="24" height="24" class="float-left mg-right-10">
+                        <p class="f-16 b context-menu">Thông tin đọc từ file DICOM</p>
+                    </span>
+                    <div id="collapse" class="collapse">
+                        <table class="table table-striped" >
+                            <tbody>
+                                <tr>
+                                    <td>Họ tên bệnh nhân</td>
+                                    <td><b class="HoTen"></b></td>
+                                </tr>
+                                <tr>
+                                    <td>Nơi chụp</td>
+                                    <td><b class="NoiChup"></b></td>
+                                </tr>
+                                <tr>
+                                    <td>Ngày chụp</td>
+                                    <td><b class="NgayChup"></b></td>
+                                </tr>
+                                <tr>
+                                    <td>Mô tả</td>
+                                    <td><b class="MoTa"></b></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <p class="f-16 b context-menu">Kết quả nhận dạng</p>
+                    <div class="text-center border-radius-10 " style="background: black; height: 512px;">
+                        <p class="loading b">Đang nhận dạng dữ liệu của bạn ...</p>
+                        <img class="object-fit ket-qua-anh-nao" src="#" >
+                    </div>
+                </div>
+                <div class="col-12 text-center pd-top-20">
+                    <button class="btn border-radius-20 pd-tb-10-lr-15 f-15 lh-35 btn-nhan-dang-hinh-moi">
+                        <img src="static/cdn/refresh.png" alt="" width="35" height="35">
+                        Nhận dạng hình mới
+                    </button>   
+                    <button class="btn border-radius-20 pd-tb-10-lr-15 f-15 lh-35 btn-luu-hinh">
+                        <img src="static/cdn/cloud-computing.png" alt="" width="35" height="35">
+                        Tải ảnh về
+                    </button>     
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    $(document).ready(function(){
+        $('.chon-file').click(function(){
+            $('.file').trigger('click');
+            return false;
+        });
+
+        $('.file').change(function(){
+            var path = this.value.split('\\');
+            $('.btn-upload').val("Tải lên tệp tin (" + path[path.length - 1] + ")");
+            $('.btn-upload').attr('disabled', false);
+        });
+
+        $("form").submit(function(evt){	 
+            evt.preventDefault();
+            var data = new FormData($('form').get(0));
+            $.ajax({
+                url: 'upload-file',
+                type: 'POST',
+                data: data,
+                cache: false,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $('.ket-qua').removeClass('hide');
+                    $('html, body').animate({
+                        scrollTop: $(".scroll").offset().top
+                    }, 500);
+                },
+                success: function (response) {
+                    var data = JSON.parse(response);
+                    $('.ket-qua-anh-nao').prop('src', data.URL);
+                    $('.HoTen').html(data.HOTEN);
+                    $('.NoiChup').html(data.NOIKHAM);
+                    $('.NgayChup').html(data.NGAYKHAM);
+                    $('.MoTa').html(data.MOTA);
+                },
+                error: function(error){
+                    console.log(error);
+                }
+            });
+        });
+
+        $('.btn-luu-hinh').click(function(){
+            var link = document.createElement('a');
+            var duongDan = $('.ket-qua-anh-nao').prop('src');
+            link.href = duongDan;
+            link.download = duongDan.substring(duongDan.lastIndexOf('/') + 1, duongDan.length );
+            document.body.appendChild(link);
+            link.click();     
+        });
+
+        $('.btn-nhan-dang-hinh-moi').click(function(){
+            $('.ket-qua, .ket-qua-anh-nao').addClass('hide');
+            $('.loading').removeClass('hide');
+        });
+
+        $('.ket-qua-anh-nao').on('load',function(){
+            $('.loading').addClass('hide');
+            $(this).removeClass('hide');
+        });
+    })
+</script>
+{% endblock script %}}
