@@ -17,7 +17,7 @@
                 <input type="submit" value="Tải ảnh lên" class="btn btn-primary btn-upload mg-top-20 border-radius-20" disabled>
             </form>
         </div>
-        <div class="col-12 ket-qua">
+        <div class="col-12 ket-qua hide">
             <div class="row">
                 <div class="col-12 pd-top-20">
                     <hr>
@@ -35,19 +35,19 @@
                             <tbody>
                                 <tr>
                                     <td>Họ tên bệnh nhân</td>
-                                    <td><b class="HoTen">Nguyễn Tố Như Ngọc</b></td>
+                                    <td><b class="HoTen"></b></td>
                                 </tr>
                                 <tr>
                                     <td>Nơi chụp</td>
-                                    <td><b class="NoiChup">Nguyễn Tố Như Ngọc</b></td>
+                                    <td><b class="NoiChup"></b></td>
                                 </tr>
                                 <tr>
                                     <td>Ngày chụp</td>
-                                    <td><b class="NgayChup">Nguyễn Tố Như Ngọc</b></td>
+                                    <td><b class="NgayChup"></b></td>
                                 </tr>
                                 <tr>
                                     <td>Mô tả</td>
-                                    <td><b class="MoTa">Nguyễn Tố Như Ngọc</b></td>
+                                    <td><b class="MoTa"></b></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -55,11 +55,12 @@
                 </div>
                 <div class="col-12">
                     <p class="f-16 b context-menu">Kết quả nhận dạng</p>
-                    <p class="text-center border-radius-10 " style="background: black">
-                        <img class="object-fit anh-nao" src="static/uploads/images/549e45b8-3cd5-11e8-9591-0862661d1fdf.png" >
-                    </p>
+                    <div class="text-center border-radius-10 " style="background: black; height: 512px;">
+                        <p class="loading b">Đang nhận dạng...</p>
+                        <img class="object-fit ket-qua-anh-nao" src="#" >
+                    </div>
                 </div>
-                <div class="col-12 text-center">
+                <div class="col-12 text-center pd-top-20">
                     <button class="btn border-radius-20 pd-tb-10-lr-15 f-15 lh-35 btn-nhan-dang-hinh-moi">
                         <img src="static/cdn/refresh.png" alt="" width="35" height="35">
                         Nhận dạng hình mới
@@ -107,7 +108,7 @@
                 },
                 success: function (response) {
                     var data = JSON.parse(response);
-                    $('.anh-nao').prop('src', data.URL);
+                    $('.ket-qua-anh-nao').prop('src', data.URL);
                     $('.HoTen').html(data.HOTEN);
                     $('.NoiChup').html(data.NOIKHAM);
                     $('.NgayChup').html(data.NGAYKHAM);
@@ -121,15 +122,21 @@
 
         $('.btn-luu-hinh').click(function(){
             var link = document.createElement('a');
-                var duongDan = $('.anh-nao').prop('src');
-                link.href = duongDan;
-                link.download = duongDan.substring(duongDan.lastIndexOf('/') + 1, duongDan.length );
-                document.body.appendChild(link);
-                link.click();     
+            var duongDan = $('.ket-qua-anh-nao').prop('src');
+            link.href = duongDan;
+            link.download = duongDan.substring(duongDan.lastIndexOf('/') + 1, duongDan.length );
+            document.body.appendChild(link);
+            link.click();     
         });
 
         $('.btn-nhan-dang-hinh-moi').click(function(){
-            $('.ket-qua').addClass('hide');
+            $('.ket-qua, .ket-qua-anh-nao').addClass('hide');
+            $('.loading').removeClass('hide');
+        });
+
+        $('.ket-qua-anh-nao').on('load',function(){
+            $('.loading').addClass('hide');
+            $(this).removeClass('hide');
         });
     })
 </script>
