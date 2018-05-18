@@ -1,0 +1,155 @@
+{% extends "view-master.html" %} {% block title %} Nhận dạng xuất huyết não {% endblock %} {% block content %}
+
+<div class="container">
+
+    <div class="row style">
+        <!-- Tiêu dề -->
+        <div class="col-12">
+            <h1 class="f-25 b">Nhận dạng vùng xuất huyết não trên ảnh CT/MRI</h1>
+            <p class="f-16">Công cụ giúp nhận dạng vùng xuất huyết não trên ảnh y tế.</p>
+        </div>
+        <!-- Kết thúc tiêu đề -->
+
+        <!-- Upload file  -->
+        <div class="col-12 div-upload-file">
+            <p class="b f-20 mg-bottom-15">Chọn tệp tin</p>
+            <div style="padding: 20px; background-color: #3d99f5; border-radius: 5px;">
+                <div style="border: 2px dashed #e4e9f0; padding: 40px;" class="text-center ">
+                    <label for="chon-file" class="text-center block">
+                        <img src="static/cdn/upload-white.png" height="100" width="100" class="img-fluid">             
+                    </label> 
+                    <label for="chon-file" style="color: white; font-weight: bold;"> Chọn tệp tin DICOM</label>
+                    <input type="file" class="hide" id="chon-file">
+                </div>
+            </div>
+        </div>
+        <!-- Kết thúc upload file -->
+    </div>
+
+    <div class="row style">
+        <!-- Xem chi tiết thông tin file dicom -->
+        <div class="col-12 div-xem-thong-tin hide">
+            <p class="b f-20 mg-bottom-15">Xem thêm thông tin</p>
+            <button class="at-button" data-toggle="modal" data-target="#thong-tin-chi-tiet">
+                Xem thêm thông tin
+            </button>
+        </div>
+        <!-- Kết thúc xem chi tiết thông tin file dicom-->
+
+        <!-- Ảnh dicom -->
+        <div class="col-6 div-anh-dicom hide">
+            <p class="b f-20 mg-bottom-15">Ảnh chưa nhận dạng</p>
+            <img src="#" style="width: 100%;" class="border border-radius-10 img-fluid text-center">
+        </div>
+        <!-- Kết thúc ảnh dicom -->
+
+        <!-- Hiện thị ảnh nhận dạng -->
+        <div class="col-6 div-anh-nhan-dang hide">
+            <p class="b f-20 mg-bottom-15">Ảnh đã nhận dạng</p>
+            <img src="#" style="width: 100%;" class="border border-radius-10 img-fluid text-center">
+        </div>
+        <!-- Kết thúc ảnh nhận dạng -->
+
+    </div>
+</div>
+
+<!-- Modal thông tin trên file DICOM -->
+<div class="modal fade" id="thong-tin-chi-tiet" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Thông tin chi tiết trên file DICOM</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" style="padding: 0">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Header</th>
+                        <th>Tag Desscription</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- Kết thúc modal thông tin trên file DICOM -->
+
+{% endblock %} {% block script %}
+<script>
+    $(document).ready(function () {
+        function uploadFile(file){
+            var fileName = "";
+            $.ajax({
+                url: 'upload-file',
+                type: 'POST',
+                data: file,  
+                contentType: false,
+                processData: false,
+                async: false,
+                success: function (response) {
+                    fileName = response;
+                },
+                error: function(error){ console.log(error); }
+            });
+            return fileName;
+        }
+
+        function docThongTinFileDicom(tenFile){
+            var thongTinFile = "";
+            $.ajax({
+                url: 'doc-thong-tin-file-dicom',
+                type: 'POST',
+                data: { "tenFile" : tenFile },
+                async: false,
+                success: function (response) {
+                    thongTinFile = response;
+                },
+                error: function(error){ console.log(error); }
+            });
+            return thongTinFile;
+        }
+
+        $('#chon-file').change(function(){
+            if( document.getElementById("chon-file").files.length != 0 ){
+                var formData = new FormData();
+                formData.append("file", document.getElementById("chon-file").files[0]);
+                var tenFile = uploadFile(formData);
+                
+                // Hiện thị hình ảnh
+                $(".div-anh-dicom").removeClass('hide');
+                $(".div-anh-dicom img, .div-anh-nhan-dang img").attr("src", "static/uploads/images/" + tenFile + ".png");
+
+                // Lấy thông tin file dicom
+                var thongTin = docThongTinFileDicom(tenFile);
+                $.map(JSON.parse(thongTin), function(value) {
+                    $('table tbody').append("<tr>"
+                        + "<td> (" + value.GroupTag + ", " + value.ElementTag + ") </td>"
+                        + "<td>" + value.TagDesscription + "</td>"
+                        + "<td>" + value.Value + "</td>"
+                        + "</tr>" );
+                });
+                $(".div-xem-thong-tin").removeClass('hide');
+
+                // Nhận dạng hình ảnh
+                $(".div-anh-nhan-dang").removeClass('hide').waitMe({text : 'Đang nhận dạng hình ảnh...'});
+                
+
+            }else{ console.log("No files selected."); }
+        });
+
+        $('.btn').click(function(){
+            $('.xem-them-thong-tin').removeClass('hide');
+        });
+
+    });
+</script> {% endblock script %}}
