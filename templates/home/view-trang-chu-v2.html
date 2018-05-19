@@ -87,62 +87,69 @@
 {% endblock %} {% block script %}
 <script>
     $(document).ready(function () {
-        function uploadFile(file){
-            var fileName = "";
-            $.ajax({
-                url: 'upload-file',
-                type: 'POST',
-                data: file,  
-                contentType: false,
-                processData: false,
-                async: false,
-                success: function (response) {
-                    fileName = response;
-                },
-                error: function(error){ console.log(error); }
-            });
-            return fileName;
-        }
-
-        function docThongTinFileDicom(tenFile){
-            var thongTinFile = "";
+        var _TENFILE;
+        
+        // Đọc thông tin file dicom
+        function docThongTinFileDicom(){
             $.ajax({
                 url: 'doc-thong-tin-file-dicom',
                 type: 'POST',
-                data: { "tenFile" : tenFile },
-                async: false,
+                data: { "tenFile" : _TENFILE },
                 success: function (response) {
-                    thongTinFile = response;
+                    $.map(JSON.parse(response), function(value) {
+                        $('table tbody').append("<tr>"
+                            + "<td> (" + value.GroupTag + ", " + value.ElementTag + ") </td>"
+                            + "<td>" + value.TagDesscription + "</td>"
+                            + "<td>" + value.Value + "</td>"
+                            + "</tr>" );
+                    });
                 },
                 error: function(error){ console.log(error); }
             });
-            return thongTinFile;
+        }
+
+        // Nhận dạng vùng xuất huyết não
+        function nhanDangVungXuatHuyetNao(){
+            $.ajax({
+                url: 'nhan-dang-vung-xuat-huyet-nao',
+                type: 'POST',
+                data: { "tenFile" : _TENFILE },
+                success: function (response) {
+                    $(".div-anh-nhan-dang img").attr("src", "static/uploads/images-detect/" + response + ".png");
+                    $(".div-anh-nhan-dang").waitMe('hide');
+                },
+                error: function(error){ console.log(error); }
+            });
         }
 
         $('#chon-file').change(function(){
             if( document.getElementById("chon-file").files.length != 0 ){
                 var formData = new FormData();
                 formData.append("file", document.getElementById("chon-file").files[0]);
-                var tenFile = uploadFile(formData);
-                
-                // Hiện thị hình ảnh
-                $(".div-anh-dicom").removeClass('hide');
-                $(".div-anh-dicom img, .div-anh-nhan-dang img").attr("src", "static/uploads/images/" + tenFile + ".png");
 
-                // Lấy thông tin file dicom
-                var thongTin = docThongTinFileDicom(tenFile);
-                $.map(JSON.parse(thongTin), function(value) {
-                    $('table tbody').append("<tr>"
-                        + "<td> (" + value.GroupTag + ", " + value.ElementTag + ") </td>"
-                        + "<td>" + value.TagDesscription + "</td>"
-                        + "<td>" + value.Value + "</td>"
-                        + "</tr>" );
+                // Upload file dicom lên server
+                $.ajax({
+                    url: 'upload-file',
+                    type: 'POST',
+                    data: formData,  
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        _TENFILE = response;
+                        // Hiện thị hình ảnh
+                        $(".div-anh-dicom").removeClass('hide');
+                        $(".div-anh-dicom img, .div-anh-nhan-dang img")
+                            .attr("src", "static/uploads/images/" + response + ".png");
+
+                        $(".div-anh-nhan-dang").removeClass('hide').waitMe();
+
+                        docThongTinFileDicom();
+                        nhanDangVungXuatHuyetNao();
+                    },
+                    error: function(error){ console.log(error); }
                 });
-                $(".div-xem-thong-tin").removeClass('hide');
-
-                // Nhận dạng hình ảnh
-                $(".div-anh-nhan-dang").removeClass('hide').waitMe({text : 'Đang nhận dạng hình ảnh...'});
                 
+                $(".div-xem-thong-tin").removeClass('hide');
 
             }else{ console.log("No files selected."); }
         });
