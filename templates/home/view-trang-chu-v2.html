@@ -2,22 +2,24 @@
 
 <div class="container">
 
-    <div class="row style">
+    <div class="row pd-top-20">
         <!-- Tiêu dề -->
         <div class="col-12">
             <h1 class="f-25 b">Nhận dạng vùng xuất huyết não trên ảnh CT/MRI</h1>
             <p class="f-16">Công cụ giúp nhận dạng vùng xuất huyết não trên ảnh y tế.</p>
         </div>
         <!-- Kết thúc tiêu đề -->
+    </div>
 
+    <div class="row">
         <!-- Upload file  -->
         <div class="col-12 div-upload-file">
-            <p class="b f-20 mg-bottom-15">Chọn tệp tin</p>
+            <p class="b f-20">Chọn tệp tin</p>
             <div style="padding: 20px; background-color: #3d99f5; border-radius: 5px;">
                 <div style="border: 2px dashed #e4e9f0; padding: 40px;" class="text-center ">
                     <label for="chon-file" class="text-center block">
-                        <img src="static/cdn/upload-white.png" height="100" width="100" class="img-fluid">             
-                    </label> 
+                        <img src="static/cdn/upload-white.png" height="100" width="100" class="img-fluid">
+                    </label>
                     <label for="chon-file" style="color: white; font-weight: bold;"> Chọn tệp tin DICOM</label>
                     <input type="file" class="hide" id="chon-file">
                 </div>
@@ -26,45 +28,18 @@
         <!-- Kết thúc upload file -->
     </div>
 
-    <div class="row style">
-        <!-- Xem chi tiết thông tin file dicom -->
-        <div class="col-12 div-xem-thong-tin hide">
-            <p class="b f-20 mg-bottom-15">Xem thêm thông tin</p>
-            <button class="at-button" data-toggle="modal" data-target="#thong-tin-chi-tiet">
-                Xem thêm thông tin
-            </button>
+    <div class="row div-anh-dicom hide scroll pd-top-20">
+        <div class="col-12 ">
+            <div class="border-top pd-top-20"></div>
         </div>
-        <!-- Kết thúc xem chi tiết thông tin file dicom-->
-
-        <!-- Ảnh dicom -->
-        <div class="col-6 div-anh-dicom hide">
-            <p class="b f-20 mg-bottom-15">Ảnh chưa nhận dạng</p>
-            <img src="#" style="width: 100%;" class="border border-radius-10 img-fluid text-center">
+        <div class="col-4">
+            <p class="f-20 b">Ảnh ban đầu</p>
+            <img src="#"
+                style="width: 100%;" class="border border-radius-5  img-fluid text-center">
         </div>
-        <!-- Kết thúc ảnh dicom -->
-
-        <!-- Hiện thị ảnh nhận dạng -->
-        <div class="col-6 div-anh-nhan-dang hide">
-            <p class="b f-20 mg-bottom-15">Ảnh đã nhận dạng</p>
-            <img src="#" style="width: 100%;" class="border border-radius-10 img-fluid text-center">
-        </div>
-        <!-- Kết thúc ảnh nhận dạng -->
-
-    </div>
-</div>
-
-<!-- Modal thông tin trên file DICOM -->
-<div class="modal fade" id="thong-tin-chi-tiet" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Thông tin chi tiết trên file DICOM</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body" style="padding: 0">
-            <table class="table table-striped">
+        <div class="col-8">
+            <p class="f-20 b">Thông tin file dicom</p>
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Header</th>
@@ -72,58 +47,118 @@
                         <th>Value</th>
                     </tr>
                 </thead>
-                <tbody>
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
-        </div>
-      </div>
     </div>
-  </div>
-<!-- Kết thúc modal thông tin trên file DICOM -->
+
+    <div class="loading hide" style="height: 75px;"></div>
+
+    <div class="row hide div-nhan-dang pd-top-20">
+        <div class="col-12 ">
+            <div class="border-top pd-top-20"></div>
+        </div>
+        <div class="col-12">
+            <p class="f-20 b">Ảnh qua nhận dạng</p>
+        </div>
+    </div>
+
+    <div class="row hide div-hinh-anh-lien-quan">
+        <div class="col-12">
+            <p class="f-20 b">Ảnh tương tự</p>
+        </div>
+    </div>
 
 {% endblock %} {% block script %}
 <script>
     $(document).ready(function () {
-        var _TENFILE;
-        
+        var _TENFILE, _TENLOAIXUATHUYET;
+
         // Đọc thông tin file dicom
-        function docThongTinFileDicom(){
+        function docThongTinFileDicom() {
             $.ajax({
                 url: 'doc-thong-tin-file-dicom',
                 type: 'POST',
-                data: { "tenFile" : _TENFILE },
+                data: { "tenFile": _TENFILE },
                 success: function (response) {
-                    $.map(JSON.parse(response), function(value) {
+                    $.map(JSON.parse(response), function (value) {
                         $('table tbody').append("<tr>"
                             + "<td> (" + value.GroupTag + ", " + value.ElementTag + ") </td>"
                             + "<td>" + value.TagDesscription + "</td>"
                             + "<td>" + value.Value + "</td>"
-                            + "</tr>" );
+                            + "</tr>");
                     });
                 },
-                error: function(error){ console.log(error); }
+                error: function (error) { console.log(error); }
             });
         }
 
         // Nhận dạng vùng xuất huyết não
-        function nhanDangVungXuatHuyetNao(){
+        function nhanDangVungXuatHuyetNao() {
+            var listLoaiBenh = [];
             $.ajax({
                 url: 'nhan-dang-vung-xuat-huyet-nao',
                 type: 'POST',
-                data: { "tenFile" : _TENFILE },
+                data: { "tenFile": _TENFILE },
                 success: function (response) {
-                    $(".div-anh-nhan-dang img").attr("src", "static/uploads/images-detect/" + response + ".png");
-                    $(".div-anh-nhan-dang").waitMe('hide');
+                    $('.div-nhan-dang').removeClass('hide');
+                    $.map(JSON.parse(response), function (value) {
+                        listLoaiBenh.push(value.ketqua);
+                        $('.div-nhan-dang').append("<div class='col-4'>" +
+                                                "<img src='static/uploads/images-detect/" + value.src + ".png' style='width: 100%;' class='border border-radius-5  img-fluid text-center'>" +
+                                                "<div class='row pd-top-5'>" +
+                                                "<div class='col-7'>" +
+                                                "<p class='f-13'>Loại xuất huyết</p>" +
+                                                "<p class='f-16 b'>" + value.ketqua + "</p>" +
+                                                "</div>" +
+                                                "<div class='col-5' style='border-left: 1px solid #dddddd'>" +
+                                                "<p class='f-13'>Độ chính xác đạt</p>" +
+                                                "<p class='b f-25'>" + value.tile + "%</p>" +
+                                                "</div>" +
+                                                "</div>" +
+                                                "</div>");
+                                                });
+                    // Ẩn giao diện loading
+                    $('.loading').waitMe('hide');
+                    $('.loading').addClass('hide');
+
+                    // Lấy hình ảnh liên quan
+                    hinhAnhLienQuan(listLoaiBenh);
                 },
-                error: function(error){ console.log(error); }
+                error: function (error) { console.log(error); }
             });
         }
 
-        $('#chon-file').change(function(){
-            if( document.getElementById("chon-file").files.length != 0 ){
+        // Hình ảnh liên quan
+        function hinhAnhLienQuan(listLoaiBenh) {
+            $.ajax({
+                url: 'hinh-anh-lien-quan',
+                type: 'POST',
+                data: { "listLoaiBenh": JSON.stringify(listLoaiBenh) },
+                success: function (response) {
+                    $('.div-hinh-anh-lien-quan').removeClass('hide');
+                    $.map(JSON.parse(response), function (value) {
+                        $('.div-hinh-anh-lien-quan').append("<div class='col-4'>" +
+                                                "<img src='static/uploads/images-detect/" + value.src + ".png' style='width: 100%;' class='border border-radius-5  img-fluid text-center'>" +
+                                                "<div class='row pd-top-5'>" +
+                                                "<div class='col-7'>" +
+                                                "<p class='f-13'>Loại xuất huyết</p>" +
+                                                "<p class='f-16 b'>" + value.ketqua + "</p>" +
+                                                "</div>" +
+                                                "<div class='col-5' style='border-left: 1px solid #dddddd'>" +
+                                                "<p class='f-13'>Độ chính xác đạt</p>" +
+                                                "<p class='b f-25'>" + value.tile + "%</p>" +
+                                                "</div>" +
+                                                "</div>" +
+                                                "</div>");
+                                                });
+                },
+                error: function (error) { console.log(error); }
+            });
+        }
+
+        $('#chon-file').change(function () {
+            if (document.getElementById("chon-file").files.length != 0) {
                 var formData = new FormData();
                 formData.append("file", document.getElementById("chon-file").files[0]);
 
@@ -131,7 +166,7 @@
                 $.ajax({
                     url: 'upload-file',
                     type: 'POST',
-                    data: formData,  
+                    data: formData,
                     contentType: false,
                     processData: false,
                     success: function (response) {
@@ -141,20 +176,29 @@
                         $(".div-anh-dicom img, .div-anh-nhan-dang img")
                             .attr("src", "static/uploads/images/" + response + ".png");
 
-                        $(".div-anh-nhan-dang").removeClass('hide').waitMe();
+                        $('html, body').animate({
+                                scrollTop: $(".scroll").offset().top
+                            }, 500);
 
+                        // Đọc thông tin file dicom
                         docThongTinFileDicom();
+
+                        // Show giao diện loading
+                        $('.loading').removeClass('hide');
+                        $('.loading').waitMe({effect : 'bounce', text : 'Đang nhận dạng hình ảnh...', bg : 'rgba(255,255,255,0.7)', fontSize: '14px;'});
+                        
+                        // Nhận dạng vùng xuất huyết
                         nhanDangVungXuatHuyetNao();
                     },
-                    error: function(error){ console.log(error); }
+                    error: function (error) { console.log(error); }
                 });
-                
+
                 $(".div-xem-thong-tin").removeClass('hide');
 
-            }else{ console.log("No files selected."); }
+            } else { console.log("No files selected."); }
         });
 
-        $('.btn').click(function(){
+        $('.btn').click(function () {
             $('.xem-them-thong-tin').removeClass('hide');
         });
 

@@ -8,8 +8,10 @@ from pydicom.data import get_testdata_files
 from datetime import datetime
 from modules.utils import label_map_util
 from modules.utils import visualization_utils as vis_util
+from datetime import datetime
 from Home.Dicom2Png import Dicom2Png
 from Home.DicomInfo import DicomInfo
+from Home.DBConnect import DBConnect
 
 # Create your views here.
 def getViewTrangChu(request):
@@ -38,6 +40,12 @@ def postUpload(request):
         dicom = Dicom2Png()
         dicom.Convert(urlFile, randomTenFile)
 
+        # Cập nhật dữ liệu vào DB
+        db = DBConnect()
+        IDDICOM = str(uuid.uuid1())
+        THOIGIAN = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        rs = db.noneGetTable("INSERT INTO DICOM (IDDICOM, TENFILE, THOIGIAN) VALUES ('"+ IDDICOM +"', '" + randomTenFile + "', '" + THOIGIAN + "')")
+
         return HttpResponse(randomTenFile)
     else:
         return HttpResponse("FILE NOT FOUND")
@@ -58,15 +66,13 @@ def nhanDangVungXuatHuyet(request):
     MODEL_NAME = 'modules/inference_graph'
     IMAGE_NAME = "static/uploads/images/" + tenFile + ".png"
 
-    print(IMAGE_NAME)
-
     CWD_PATH = os.getcwd()
     PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,'15000_frozen_inference_graph.pb')
     PATH_TO_LABELS = os.path.join(CWD_PATH,'modules/training','labelmap.pbtxt')
     PATH_TO_IMAGE = os.path.join(CWD_PATH,IMAGE_NAME)
     NUM_CLASSES = 4
     label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-    categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
+    categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=False)
     category_index = label_map_util.create_category_index(categories)
     detection_graph = tf.Graph()
 
@@ -94,24 +100,50 @@ def nhanDangVungXuatHuyet(request):
         feed_dict={image_tensor: image_expanded})
 
     arrayPath = []
-    indexName = 0
 
+    # Tim IDDCOM từ tên file DICOM
+    db = DBConnect()
+    data = db.getTable("SELECT IDDICOM FROM DICOM WHERE TENFILE = '"+ tenFile +"'")
+    if len(data) > 0:
+        IDDICOM = data[0][0]
+    else:
+        return HttpResponse("ERROR")
+
+    # List tên file hình ảnh nhận dạng
+    arrayPath = []
+
+    # Nhận dạng
     for indexRow, row in enumerate(scores):
         for indexCol, item in enumerate(row):
             if item >= 0.8:
 
+                # Thêm dữ liệu vào DB
+                IDNHANDANG = str(uuid.uuid1())
+                KETQUA = ''
+                if classes[indexRow][indexCol] == 1:
+                    KETQUA = "Tụ máu dưới màn cứng"
+
+                if classes[indexRow][indexCol] == 2:
+                    KETQUA = "Tụ máu ngoài màn cứng"
+
+                if classes[indexRow][indexCol] == 3:
+                    KETQUA = "Xuất huyết khoang dưới nhện"
+
+                if classes[indexRow][indexCol] == 4:
+                    KETQUA = "Xuất huyết não thất"
+
+                db.noneGetTable("INSERT INTO NHANDANG (IDNHANDANG, IDDICOM, TENFILE, KETQUA, PHAMTRAM) VALUES ('" + IDNHANDANG + "', '" + IDDICOM + "', '" + IDNHANDANG + "', '" + KETQUA + "', " + str(scores[indexRow][indexCol]) + ")")
+
+                # Chuẩn bị dữ liệu return
+                arrayPath.append({"src" : IDNHANDANG, "ketqua": KETQUA, "tile": '{0:.2f}'.format(scores[indexRow][indexCol] * 100)})
+
+                renewImg = cv2.imread(PATH_TO_IMAGE)
                 arrayboxes = []
                 arrayclasses = []
                 arrayscores = []
-                
-                renewImg = cv2.imread(PATH_TO_IMAGE)
-
                 arrayboxes.append(boxes[indexRow][indexCol])
                 arrayclasses.append(classes[indexRow][indexCol])
                 arrayscores.append(scores[indexRow][indexCol])
-
-                print(arrayboxes)
-
                 vis_util.visualize_boxes_and_labels_on_image_array(
                     renewImg,
                     np.array(arrayboxes),
@@ -121,8 +153,25 @@ def nhanDangVungXuatHuyet(request):
                     use_normalized_coordinates=True,
                     line_thickness=8,
                     min_score_thresh=0.80)
-                cv2.imwrite("static/uploads/images-detect/" + tenFile + "-" + str(indexName) + ".png", renewImg)
-                indexName += 1
+                cv2.imwrite("static/uploads/images-detect/" + IDNHANDANG + ".png", renewImg)
 
+    return HttpResponse(json.dumps(arrayPath))
 
-    return HttpResponse(tenFile)
+@csrf_exempt
+def hinhAnhLienQuan(request):
+    if request.method == 'POST':
+        listLoaiBenh = json.loads(request.POST.get("listLoaiBenh"))
+        WHERE = ""
+        if len(listLoaiBenh) > 0:
+            WHERE = "WHERE"
+        for index, item in enumerate(listLoaiBenh):
+            if index != 0 or index == len(listLoaiBenh) - 1:
+                WHERE += " KETQUA = '"+ item +"'"
+            else:
+                WHERE += " OR KETQUA = '"+ item +"'"
+        db = DBConnect()
+        data = db.getTable("SELECT TENFILE, KETQUA, PHAMTRAM FROM NHANDANG " + WHERE + " ORDER BY RANDOM() LIMIT 6")
+        print(json.dumps(data))
+        return HttpResponse(json.dumps(data))
+    else:
+        return HttpResponse("404")
