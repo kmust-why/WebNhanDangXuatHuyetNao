@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+*{ font-family: 'Roboto', sans-serif; }
 ::-webkit-scrollbar {
     width: 10px;
 }
@@ -8,12 +10,6 @@
     border-width: 1px 1px 1px 6px;
     -webkit-box-shadow: inset 1px 1px 0 rgba(0,0,0,.1), inset 0 -1px 0 rgba(0,0,0,.07);
     box-shadow: inset 1px 1px 0 rgba(0,0,0,.1), inset 0 -1px 0 rgba(0,0,0,.07);
-}
-.table { font-size: 14px; height: 350px; display: block; overflow: auto; }
-
-.table thead th {
-    vertical-align: bottom;
-    border-top: 0;
 }
 
 .row{
@@ -167,4 +163,23 @@ p, h1, h2, h3, h4, h5, h6{
 
 .border-top{
     border-top: 1px solid #dddddd;
+}
+
+.border-left{
+    border-left: 1px solid #dddddd;
+}
+
+.border-right{
+    border-right: 1px solid #dddddd;
+}
+
+.border-bottom{
+    border-bottom: 1px solid #dddddd;
+}
+
+.table{
+    height: 350px;
+    overflow: auto;
+    display: inherit;
+    font-size: 14px;
 }
