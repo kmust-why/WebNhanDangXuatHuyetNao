@@ -117,12 +117,40 @@ def nhanDangVungXuatHuyet(request):
     detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
+    # (100, 1, 1, 2048)
+    feat_avg = detection_graph.get_tensor_by_name('SecondStageBoxPredictor/AvgPool:0')
+  #  feat_conv = detection_graph.get_tensor_by_name('SecondStageFeatureExtractor/resnet_v1_101/block4/unit_3/bottleneck_v1/Relu:0')
+   # NextIteration_1 = detection_graph.get_tensor_by_name('SecondStageFeatureExtractor/resnet_v1_101/block4/unit_3/bottleneck_v1/conv3/Conv2D:0')
+
     #
     image = cv2.imread(PATH_TO_IMAGE)
     image_expanded = np.expand_dims(image, axis=0)
-    (boxes, scores, classes, num) = sess.run(
+    ( boxes, scores, classes, num) = sess.run(
         [detection_boxes, detection_scores, detection_classes, num_detections],
         feed_dict={image_tensor: image_expanded})
+
+
+    avg = sess.run(feat_avg, feed_dict={image_tensor: np.array(image_expanded)})
+    feature = np.squeeze(np.array(avg))
+
+    print(feature)
+
+    # feature = feature.reshape(-1,50,4032)
+
+
+    # feature_vector = np.squeeze(avg)  
+    # print(feature_vector)
+#     print(b)
+#    # feature_set = sess.run(image_tensor, {'image_tensor:0': image})
+
+    np.savetxt("static/uploads/image_vectors/b.pnz", feature, delimiter=',')
+
+
+#     for op  in sess.graph.get_operations():
+#         print(str(op.name))
+# # #
+
+
     
     #
     # List tên file hình ảnh nhận dạng
@@ -199,76 +227,7 @@ def nhanDangVungXuatHuyet(request):
                     skip_labels=True)
                 cv2.imwrite("static/uploads/images-detect/" + IDNHANDANG + ".png", renewImg)
             
-    #
-    # Index hình ảnh qua mô hình mạng CNN
-    #
-    with tf.gfile.FastGFile(os.path.join(CWD_PATH,MODEL_NAME, 'classify_image_graph_def.pb'), 'rb') as f:
-        graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
-        _ = tf.import_graph_def(graph_def, name='')
-        with tf.Session() as sess:
-            softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
-            with tf.gfile.FastGFile(PATH_TO_IMAGE, 'rb') as f:
-                image_data =  f.read()
-                feature_tensor = sess.graph.get_tensor_by_name('pool_3:0')
-                feature_set = sess.run(feature_tensor,
-                                {'DecodeJpeg/contents:0': image_data})
-                feature_vector = np.squeeze(feature_set)        
-                outfile_name = tenFile + ".npz"
-                out_path = os.path.join("static/uploads/image_vectors", outfile_name)
-                np.savetxt(out_path, feature_vector, delimiter=',')
-
-    #
-    # Tạo cấu trúc file lưu trữ
-    #
-    file_index_to_file_name = {}
-    file_index_to_file_vector = {}
-    chart_image_positions = {}
-
-    #
-    # Cấu hình thông số dữ liệu nguồn và số lượng ảnh
-    #
-    dims = 2048
-    n_nearest_neighbors = 30
-    trees = 10000
-    infiles = glob.glob("static/uploads/image_vectors/"+ tenFile +".npz")
-
-    #
-    # Index hình ảnh
-    #
-    t = AnnoyIndex(dims)
-    for file_index, i in enumerate(infiles):
-        file_vector = np.loadtxt(i)
-        file_name = os.path.basename(i).split('.')[0]
-        file_index_to_file_name[file_index] = file_name
-        file_index_to_file_vector[file_index] = file_vector
-        t.add_item(file_index, file_vector)
-        t.build(trees)
-
-    #
-    # Sư dụng nearest neighbors và lưu kết quả ra file
-    #
-    for i in file_index_to_file_name.keys():
-        master_file_name = file_index_to_file_name[i]
-        master_vector = file_index_to_file_vector[i]
-
-        named_nearest_neighbors = []
-        nearest_neighbors = t.get_nns_by_item(i, n_nearest_neighbors)
-        for j in nearest_neighbors:
-            neighbor_file_name = file_index_to_file_name[j]
-            neighbor_file_vector = file_index_to_file_vector[j]
-
-            similarity = 1 - spatial.distance.cosine(master_vector, neighbor_file_vector)
-            rounded_similarity = int((similarity * 10000)) / 10000.0
-
-            named_nearest_neighbors.append({
-            'filename': neighbor_file_name,
-            'similarity': rounded_similarity
-            })
-
-        with open('static/uploads/nearest_neighbors/' + master_file_name + '.json', 'w') as out:
-            json.dump(named_nearest_neighbors, out)
-            
+    
     return HttpResponse(json.dumps(arrayPath)) 
 
 @csrf_exempt
