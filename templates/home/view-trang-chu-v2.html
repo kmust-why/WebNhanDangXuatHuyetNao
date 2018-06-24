@@ -62,21 +62,19 @@
         <div class="loading col-12" style="height: 75px;"></div>
     </div>
 
-    <!-- <div class="row hide div-hinh-anh-lien-quan">
+    <div class="row hide div-hinh-anh-lien-quan">
         <div class="col-12 ">
             <div class="border-top pd-top-20"></div>
         </div>
         <div class="col-12">
             <p class="f-20 b">Ảnh tương tự</p>
         </div>
-    </div> -->
+    </div>
 
 {% endblock %} {% block script %}
 <script>
     $(document).ready(function () {
         var _TENFILE, _TENLOAIXUATHUYET;
-
-        // Đọc thông tin file dicom
         function docThongTinFileDicom() {
             $.ajax({
                 url: 'doc-thong-tin-file-dicom',
@@ -94,8 +92,6 @@
                 error: function (error) { console.log(error); }
             });
         }
-
-        // Nhận dạng vùng xuất huyết não
         function nhanDangVungXuatHuyetNao() {
             $.ajax({
                 url: 'nhan-dang-vung-xuat-huyet-nao',
@@ -103,7 +99,7 @@
                 data: { "tenFile": _TENFILE },
                 success: function (response) {
                     $.map(JSON.parse(response), function (value) {
-                        $('.div-nhan-dang').append("<div class='col-4'>" +
+                        $('.div-nhan-dang').append("<div class='col-4 anh-lien-quan' data='"+ value.src +"'>" +
                                                 "<img src='static/uploads/images-detect/" + value.src + ".png' style='width: 100%;' class='border border-radius-5 img-fluid text-center'>" +
                                                 "<div class='row pd-top-5'>" +
                                                 "<div class='col-7'>" +
@@ -124,41 +120,38 @@
                             + "</div>");
                     }
                     
-                    // Ẩn giao diện loading
                     $('.loading').waitMe('hide');
                     $('.loading').addClass('hide');
 
                     $('html, body').animate({
                         scrollTop: $(".div-nhan-dang").offset().top
                     }, 500);
-
-                    // Lấy hình ảnh liên quan
-                   // hinhAnhLienQuan();
                 },
                 error: function (error) { console.log(error); }
             });
         }
 
         // Hình ảnh liên quan
-        function hinhAnhLienQuan() {
+        function hinhAnhLienQuan(name) {
             $.ajax({
                 url: 'hinh-anh-lien-quan',
                 type: 'POST',
-                data: { "tenFile": _TENFILE },
+                data: { "tenFile": name },
                 success: function (response) {
+                    console.log(response);
                     alert(response);
                     $('.div-hinh-anh-lien-quan').removeClass('hide');
                     $.map(JSON.parse(response), function (value) {
                         $('.div-hinh-anh-lien-quan').append("<div class='col-4'>" +
-                                                "<img src='static/uploads/images-detect/" + value[0] + ".png' style='width: 100%;' class='border border-radius-5  img-fluid text-center'>" +
+                                                "<img src='static/uploads/images-detect/" + value.tenfile + ".png' style='width: 100%;' class='border border-radius-5  img-fluid text-center'>" +
                                                 "<div class='row pd-top-5'>" +
                                                 "<div class='col-7'>" +
                                                 "<p class='f-13'>Loại xuất huyết</p>" +
-                                                "<p class='f-16 b'>" + value[1] + "</p>" +
+                                                "<p class='f-16 b'>" + value.ketQua + "</p>" +
                                                 "</div>" +
                                                 "<div class='col-5' style='border-left: 1px solid #dddddd'>" +
                                                 "<p class='f-13'>Độ chính xác đạt</p>" +
-                                                "<p class='b f-25'>" + value[2] + "%</p>" +
+                                                "<p class='b f-25'>" + value.phamTram + "%</p>" +
                                                 "</div>" +
                                                 "</div>" +
                                                 "</div>");
@@ -208,5 +201,12 @@
 
             } else { console.log("No files selected."); }
         });
+
+        $(document).on('click', '.anh-lien-quan', function(){
+            alert($(this).attr('data'));
+            hinhAnhLienQuan($(this).attr('data'));
+        })
+
+
     });
 </script> {% endblock script %}}

@@ -3,7 +3,6 @@ from django.db import connection
 class DBConnect:
 
     def getTable(self, Query):
-        print(Query)
         with connection.cursor() as cursor:
             cursor.execute(Query)
             row = cursor.fetchall()

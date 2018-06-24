@@ -1,39 +1,34 @@
 import os, sys, cv2, uuid, json, glob, numpy as np, tensorflow as tf
 from modules.utils import label_map_util
 from modules.utils import visualization_utils as vis_util
+from home.model.SimilarImages import SimilarImages
 
 class DetectionBrainHemorrhage:
-    MODEL_NAME = 'modules/inference_graph'
-    ROOT_PATH_IMAGE = 'static/uploads/images/'
-    ROOT_PATH_DETECTION = 'static/uploads/images-detect/'
-    NUM_CLASSES = 4
     SESSION = None
+    CATEGORIES_INDEX = None
     IMAGE_TENSOR = None
     DETECTION_BOXES = None
     DETECTION_SCORES = None
     DETECTION_CLASSES = None
     NUM_DETECTIONS = None
-    CATEGORIES_INDEX = None
+    SIMILAR = None
 
     def __init__(self, *args, **kwargs):
-        CWD_PATH = os.getcwd()
-        PATH_TO_CKPT = os.path.join(CWD_PATH, self.MODEL_NAME, '20000_faster_rcnn_resnet101_coco.pb')
-        PATH_TO_LABELS = os.path.join(CWD_PATH,'modules/training','labelmap.pbtxt')
-        label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
+        label_map = label_map_util.load_labelmap("modules/training/labelmap.pbtxt")
         categories = label_map_util.convert_label_map_to_categories(
             label_map, 
-            max_num_classes = self.NUM_CLASSES, 
+            max_num_classes = 4, 
             use_display_name = False)
         self.CATEGORIES_INDEX = label_map_util.create_category_index(categories)
         detection_graph = tf.Graph()
 
         with detection_graph.as_default():
             od_graph_def = tf.GraphDef()
-            with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+            with tf.gfile.GFile("modules/inference_graph/50000_rfcn_resnet101_coco.pb", 'rb') as fid:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-            self.SESSION = tf.Session(graph=detection_graph)
+                self.SESSION = tf.Session(graph=detection_graph)
 
         self.IMAGE_TENSOR = detection_graph.get_tensor_by_name('image_tensor:0')
         self.DETECTION_BOXES = detection_graph.get_tensor_by_name('detection_boxes:0')
@@ -41,13 +36,17 @@ class DetectionBrainHemorrhage:
         self.DETECTION_CLASSES = detection_graph.get_tensor_by_name('detection_classes:0')
         self.NUM_DETECTIONS = detection_graph.get_tensor_by_name('num_detections:0')
 
-    def Detection(self, pathImg):
-        CWD_PATH = os.getcwd()
-        IMAGE_NAME = self.ROOT_PATH_IMAGE + pathImg
-        PATH_TO_IMAGE = os.path.join(CWD_PATH, IMAGE_NAME)
-        if os.path.isfile(PATH_TO_IMAGE) is False:
+        self.SIMILAR = SimilarImages()
+
+    def Detection(self, fileName):
+        if not os.path.isfile(fileName):
+            print("File not exist: " + fileName)
             return None
-        image = cv2.imread(PATH_TO_IMAGE)
+        image = cv2.imread(fileName)
+
+        # Lưu vecter đặt trưng của đối tượng
+        self.SIMILAR.FeatureVector(fileName, "static/uploads/image_vectors/")
+
         image_expanded = np.expand_dims(image, axis=0)
         ( boxes, scores, classes, num) = self.SESSION.run(
                 [self.DETECTION_BOXES, self.DETECTION_SCORES, self.DETECTION_CLASSES, self.NUM_DETECTIONS],
@@ -76,7 +75,7 @@ class DetectionBrainHemorrhage:
                         "tile": '{0:.2f}'.format(scores[indexRow][indexCol] * 100)
                         })
 
-                    renewImg = cv2.imread(PATH_TO_IMAGE)
+                    renewImg = cv2.imread(fileName)
                     arrayboxes = []
                     arrayclasses = []
                     arrayscores = []
@@ -91,10 +90,31 @@ class DetectionBrainHemorrhage:
                             self.CATEGORIES_INDEX,
                             use_normalized_coordinates=True,
                             line_thickness=7,
-                            min_score_thresh=0.50,        
-                            groundtruth_box_visualization_color='red',
+                            min_score_thresh=0.50,
                             skip_scores=True,
                             skip_labels=True
                         )
-                    cv2.imwrite(self.ROOT_PATH_DETECTION + IDNHANDANG + ".png", renewImg)
+
+                    # Drop image
+                    box = tuple(np.array(arrayboxes)[0].tolist())
+                    ymin, xmin, ymax, xmax = box
+                    height, width, channels = renewImg.shape
+                    ymin = int(ymin * height + 7)
+                    xmin = int(xmin * width + 7)
+                    ymax = int(ymax * height - 7)
+                    xmax = int(xmax * width - 7)
+                    crop_img = renewImg[ymin:ymax, xmin:xmax]
+
+                    cv2.imwrite(
+                        "static/uploads/content_object_detection/content_object/{0}.png".format(IDNHANDANG), 
+                        crop_img
+                        )
+
+                    self.SIMILAR.FeatureVector(
+                        "static/uploads/content_object_detection/content_object/{0}.png".format(IDNHANDANG), 
+                        "static/uploads/content_object_detection/image_vectors/"
+                        )
+
+                    # Lưu hình nhận dạng
+                    cv2.imwrite("static/uploads/images-detect/{0}.png".format(IDNHANDANG), renewImg)
         return arrayPath

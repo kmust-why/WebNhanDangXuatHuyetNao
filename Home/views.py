@@ -13,49 +13,35 @@ from home.model.Dicom2Png import Dicom2Png
 from home.model.DicomInfo import DicomInfo
 from home.model.DBConnect import DBConnect
 from home.model.DetectionBrainHemorrhage import DetectionBrainHemorrhage
+from home.model.ClusterVectors import ClusterVectors
 from annoy import AnnoyIndex
 from scipy import spatial
 from nltk import ngrams
 
+detection = DetectionBrainHemorrhage()
+
 def getViewTrangChu(request):
     return render(request, 'view-trang-chu-v2.html')
 
-def ThuVien(request):
-    return render(request, 'view-thu-vien.html')
-
-def TimHieuXuatHuyetNao(request):
-    return render(request, 'view-thu-vien.html')
-
 @csrf_exempt
 def postUpload(request):
-    #
-    # Hàm này sẽ nhận file dicom uopload lên
-    # Chuyển đổ file dicom sang hình ảnh
-    # Tên file được tạo tự động theo chuổi UUID
-    # Hàm sẽ trả về tên file
-    #
     if request.method == 'POST':
         randomTenFile = str(uuid.uuid1())
         fileUpload = request.FILES.get('file')
         fs = FileSystemStorage()
 
-        # Lưu file vào thư mục với tên mới
         fileName = fs.save(randomTenFile, fileUpload)
-
-        # Lấy đường đẫn file
         urlFile = fs.url(fileName)
 
-        # Chuyển đổi file DICOM sanh hình ảnh
         dicom = Dicom2Png()
         dicom.Convert(urlFile, randomTenFile)
         
-        #
-        # Thêm thong tin file vào  DB
-        #
         db = DBConnect()
         IDDICOM = str(uuid.uuid1())
         THOIGIAN = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        db.noneGetTable("INSERT INTO DICOM (IDDICOM, TENFILE, THOIGIAN) VALUES ('"+ IDDICOM +"', '" + randomTenFile + "', '" + THOIGIAN + "')")
+        db.noneGetTable("INSERT INTO DICOM(IDDICOM, TENFILE, THOIGIAN) VALUES ('{0}', '{1}', '{2}')".format(
+            IDDICOM, randomTenFile, THOIGIAN
+        ))
 
         return HttpResponse(randomTenFile)
     else:
@@ -63,10 +49,6 @@ def postUpload(request):
 
 @csrf_exempt
 def docThongTinFileDicom(request):
-    #
-    # Đọc thồng tin file dicom
-    # Đầu vào là tên file dicom ở đường dẫn static/uploads/dicom
-    #
     if request.method == 'POST':
         dicom = DicomInfo()
         path = "static/uploads/dicom/" + request.POST.get("tenFile")
@@ -76,24 +58,41 @@ def docThongTinFileDicom(request):
 
 @csrf_exempt
 def nhanDangVungXuatHuyet(request):
-    tenFile = request.POST.get("tenFile")
-    detection = DetectionBrainHemorrhage()
-    arrayPath = detection.Detection(tenFile + ".png")
-    return HttpResponse(json.dumps(arrayPath)) 
+    if request.method == 'POST':
+        tenFile = request.POST.get("tenFile")
+        arrayPath = detection.Detection("static/uploads/images/{0}.png".format(tenFile))
+
+        # Lưu kết quả vào DB
+        db = DBConnect()
+        IDDICOM = db.getTable("SELECT IDDICOM FROM DICOM WHERE TENFILE = '{0}'".format(tenFile))
+        for item in arrayPath or []:
+            db.noneGetTable("INSERT INTO NHANDANG(IDNHANDANG, IDDICOM, TENFILE, KETQUA, PHAMTRAM) VALUES ('{0}', '{1}', '{2}', '{3}', {4})".format(
+                str(uuid.uuid1()), IDDICOM[0][0], item["src"], item["ketqua"], item["tile"]
+            ))
+        return HttpResponse(json.dumps(arrayPath)) 
 
 @csrf_exempt
 def hinhAnhLienQuan(request):
     if request.method == 'POST':
+        cluster = ClusterVectors()
         ketQua = []
         tenFile = request.POST.get("tenFile")
         db = DBConnect()
-        with open("static/uploads/nearest_neighbors/" + tenFile + ".json") as f:
-            for item in json.load(f):
-                data = db.getTable("SELECT IDDICOM FROM DICOM WHERE TENFILE = '" + item["filename"] + "'")
-                ketQua.append(
-                    db.getTable("SELECT TENFILE, KETQUA, PHAMTRAM FROM NHANDANG WHERE IDDICOM = '" + data[0][0] + "'")
-                )
-
+        for item in cluster.ClusterVector(tenFile)[1:]:
+            print(item["similarity"])
+            data = db.getTable("SELECT IDDICOM FROM DICOM WHERE TENFILE = '{0}'".format(
+                item["filename"]
+            ))
+            tmp = db.getTable("SELECT TENFILE, KETQUA, PHAMTRAM FROM NHANDANG WHERE IDDICOM = '{0}'".format(
+                        data[0][0]
+                    ))
+            for kq in tmp:    
+                ketQua.append({
+                    'tenfile' : kq[0],
+                    'ketQua' : kq[1],
+                    'phamTram' : kq[2],
+                })
+           
         return HttpResponse(json.dumps(ketQua))
     else:
         return HttpResponse("404")
